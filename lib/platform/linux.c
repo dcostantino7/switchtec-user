@@ -34,8 +34,7 @@
 #include "gasops.h"
 
 #include <linux/switchtec_ioctl.h>
-
-#include "pcisw.h"
+#include <linux/pcisw.h>
 
 #include <unistd.h>
 #include <fcntl.h>
