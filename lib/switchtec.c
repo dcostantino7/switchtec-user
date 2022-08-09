@@ -240,9 +240,9 @@ void switchtec_list_free(struct switchtec_device_info *devlist)
  *	or NULL if an error occurred.
  *
  * The string can be specified as:
- *   * A path to the device (/dev/switchtec0)
+ *   * A path to the device (/dev/pciswitch0)
  *   * An index (0, 1, etc)
- *   * An index with a 'switchtec' prefix (switchtec0)
+ *   * An index with a 'switchtec' prefix (pciswitch0)
  *   * A BDF (bus, device function) string (3:00.1)
  *   * An I2C device with slave number (/dev/i2c-1@0x20)
  *   * An I2C adapter number and slave number (0@0x20)
@@ -303,7 +303,7 @@ struct switchtec_dev *switchtec_open(const char *device)
 		goto found;
 	}
 
-	if (sscanf(device, "switchtec%d", &idx) == 1) {
+	if (sscanf(device, "pciswitch%d", &idx) == 1) {
 		ret = switchtec_open_by_index(idx);
 		goto found;
 	}

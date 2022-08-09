@@ -35,6 +35,8 @@
 
 #include <linux/switchtec_ioctl.h>
 
+#include "pcisw.h"
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <endian.h>
@@ -51,7 +53,7 @@
 #include <string.h>
 #include <stddef.h>
 
-static const char *sys_path = "/sys/class/switchtec";
+static const char *sys_path = "/sys/class/pciswitch";
 
 struct switchtec_linux {
 	struct switchtec_dev dev;
@@ -117,7 +119,7 @@ static int check_switchtec_device(struct switchtec_linux *ldev)
 	int ret;
 	char syspath[PATH_MAX];
 
-	ret = dev_to_sysfs_path(ldev, "device/switchtec", syspath,
+	ret = dev_to_sysfs_path(ldev, "device/pciswitch", syspath,
 				sizeof(syspath));
 	if (ret)
 		return ret;
@@ -304,12 +306,18 @@ static int submit_cmd(struct switchtec_linux *ldev, uint32_t cmd,
 		      const void *payload, size_t payload_len)
 {
 	int ret;
-	size_t bufsize = payload_len + sizeof(cmd);
+	swdev_write_t wr;
+	size_t bufsize = payload_len + sizeof(wr);
 	char buf[bufsize];
 
-	cmd = htole32(cmd);
-	memcpy(buf, &cmd, sizeof(cmd));
-	memcpy(&buf[sizeof(cmd)], payload, payload_len);
+	wr.type = SWITCHTECH;
+	wr.rsvd = 0;
+	wr.seq_num = 0;
+	wr.cmd = htole32(cmd);
+	wr.data_len = htole32(payload_len);
+
+	memcpy(buf, &wr, sizeof(wr));
+	memcpy(&buf[sizeof(wr)], payload, payload_len);
 
 	ret = write(ldev->fd, buf, bufsize);
 
@@ -328,8 +336,9 @@ static int read_resp(struct switchtec_linux *ldev, void *resp,
 		     size_t resp_len)
 {
 	int32_t ret;
-    size_t bufsize = sizeof(uint32_t) + resp_len;
+    size_t bufsize = PCISW_READ_HEADER_SIZE + resp_len;
 	char buf[bufsize];
+	swdev_read_t rd;
 
 	ret = read(ldev->fd, buf, bufsize);
 
@@ -341,14 +350,15 @@ static int read_resp(struct switchtec_linux *ldev, void *resp,
 		return -errno;
 	}
 
-	memcpy(&ret, buf, sizeof(ret));
+	memcpy(&rd, buf, PCISW_READ_HEADER_SIZE);
+	ret = rd.status;
 	if (ret)
 		errno = ret;
 
 	if (!resp)
 		return ret;
 
-	memcpy(resp, &buf[sizeof(ret)], resp_len);
+	memcpy(resp, &buf[PCISW_READ_HEADER_SIZE], resp_len);
 
 	return ret;
 }
@@ -1034,7 +1044,7 @@ struct switchtec_dev *switchtec_open_by_index(int index)
 	char path[PATH_MAX];
 	struct switchtec_dev *dev;
 
-	snprintf(path, sizeof(path), "/dev/switchtec%d", index);
+	snprintf(path, sizeof(path), "/dev/pciswitch%d", index);
 
 	dev = switchtec_open_by_path(path);
 
@@ -1053,7 +1063,7 @@ struct switchtec_dev *switchtec_open_by_pci_addr(int domain, int bus,
 	DIR *dir;
 
 	snprintf(path, sizeof(path),
-		 "/sys/bus/pci/devices/%04x:%02x:%02x.%x/switchtec",
+		 "/sys/bus/pci/devices/%04x:%02x:%02x.%x/pciswitch",
 		 domain, bus, device, func);
 
 	dir = opendir(path);

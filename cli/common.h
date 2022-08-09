@@ -59,10 +59,10 @@ enum switchtec_fw_type check_and_print_fw_image(int img_fd,
 			"device", .cfg_type=CFG_CUSTOM, .value_addr=&cfg.dev, \
 			.argument_type=(type), \
 			.custom_handler=handler, \
-			.complete="/dev/switchtec*", \
+			.complete="/dev/pciswitch*", \
 			.env="SWITCHTEC_DEV", \
 			.help="Switchtec device to operate on. Can be any of:\n" \
-			" * a device path (/dev/switchtec0)\n" \
+			" * a device path (/dev/pciswitch0)\n" \
 			" * an index (0, 1, 2)\n" \
 			" * a PCI address (3:00.1)\n" \
 			" * an I2C path with slave address (/dev/i2c-1@0x20)\n" \
