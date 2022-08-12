@@ -135,6 +135,9 @@ static int get_partition(struct switchtec_linux *ldev)
 	int ret;
 	char syspath[PATH_MAX];
 
+	// FIXME: support generic interface!
+	// return 0;
+
 	ret = dev_to_sysfs_path(ldev, "partition", syspath,
 				sizeof(syspath));
 	if (ret)
@@ -340,7 +343,6 @@ static int read_resp(struct switchtec_linux *ldev, void *resp,
 	swdev_read_t rd;
 
 	ret = read(ldev->fd, buf, bufsize);
-
 	if (ret < 0)
 		return ret;
 
@@ -350,10 +352,10 @@ static int read_resp(struct switchtec_linux *ldev, void *resp,
 	}
 
 	memcpy(&rd, buf, PCISW_READ_HEADER_SIZE);
-	ret = rd.status;
-	if (ret)
+	ret = (int32_t)rd.status;
+	if (ret) {
 		errno = ret;
-
+	}
 	if (!resp)
 		return ret;
 
@@ -368,15 +370,20 @@ static int linux_cmd(struct switchtec_dev *dev,  uint32_t cmd,
 {
 	int ret;
 	struct switchtec_linux *ldev = to_switchtec_linux(dev);
+	int retry_count = 4;
 
 retry:
 	ret = submit_cmd(ldev, cmd, payload, payload_len);
 	if (errno == EBADE) {
 		read_resp(ldev, NULL, 0);
 		errno = 0;
+		retry_count--;
+		if (!retry_count)
+			goto done;
 		goto retry;
 	}
 
+done:
 	if (ret < 0)
 		return ret;
 

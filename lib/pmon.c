@@ -395,6 +395,9 @@ int switchtec_bwcntr_set_all(struct switchtec_dev *dev,
 	if (ret < 0)
 		return ret;
 
+	if (!status)
+		return -EINVAL;
+
 	for (i = 0; i < ret; i++) {
 		ids[i] = status[i].port.phys_id;
 	}
@@ -475,12 +478,15 @@ int switchtec_bwcntr_all(struct switchtec_dev *dev, int clear,
 			 struct switchtec_bwcntr_res **res)
 {
 	int ret, i;
-	struct switchtec_status *status;
+	struct switchtec_status *status = NULL;
 	int ids[SWITCHTEC_MAX_PORTS];
 
 	ret = switchtec_status(dev, &status);
 	if (ret < 0)
 		return ret;
+
+	if (!status)
+		return -EINVAL;
 
 	if (ports)
 		*ports = calloc(ret, sizeof(**ports));

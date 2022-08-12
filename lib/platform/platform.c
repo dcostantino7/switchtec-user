@@ -172,6 +172,7 @@ int switchtec_cmd(struct switchtec_dev *dev,  uint32_t cmd,
 
 	ret = dev->ops->cmd(dev, cmd, payload, payload_len, resp, resp_len);
 	if (ret > 0) {
+		fprintf(stderr, "[%s:%d] ret:%d\n", __func__, __LINE__, ret);
 		mrpc_error_cmd = cmd & SWITCHTEC_CMD_MASK;
 		errno |= SWITCHTEC_ERRNO_MRPC_FLAG_BIT;
 	}
